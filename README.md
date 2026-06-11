@@ -114,5 +114,4 @@ http://127.0.0.1:5000
 
 ## Mata Kuliah
 
-Ujian Akhir Praktikum - Pengolahan Citra
-Program Studi Informatika
+Ujian Akhir Praktikum - Pengolahan Citra 
