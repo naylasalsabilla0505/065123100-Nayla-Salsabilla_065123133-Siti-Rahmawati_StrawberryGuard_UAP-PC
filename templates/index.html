@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deteksi Penyakit Daun Stroberi — Median Filter, HSV, GLCM, KNN & Naive Bayes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /*  GLCM Feature Cards  */
+        .glcm-section {
+            margin-bottom: 2rem;
+        }
+
+        .glcm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 900px) {
+            .glcm-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .glcm-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .glcm-item {
+            background: #fff;
+            border: 1px solid rgba(52, 76, 61, 0.13);
+            border-top: 3px solid #344C3D;
+            border-radius: 12px;
+            padding: 1.1rem 1.2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            box-shadow: 0 2px 8px rgba(52, 76, 61, 0.06);
+            transition: box-shadow .2s;
+        }
+
+        .glcm-item:hover {
+            box-shadow: 0 4px 16px rgba(52, 76, 61, 0.12);
+        }
+
+        .glcm-item-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #344C3D;
+            font-weight: 700;
+        }
+
+        .glcm-item-short {
+            font-size: 0.8rem;
+            color: #4e6057;
+            line-height: 1.5;
+            margin-bottom: 0.2rem;
+        }
+
+        .glcm-item-val {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #1a3326;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .glcm-item-interp {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.4rem;
+        }
+
+        .glcm-tag {
+            font-size: 0.7rem;
+            border-radius: 5px;
+            padding: 3px 7px;
+            line-height: 1.4;
+        }
+
+        .glcm-tag.high {
+            background: rgba(181, 69, 27, 0.08);
+            color: #8b3112;
+        }
+
+        .glcm-tag.low {
+            background: rgba(45, 106, 79, 0.09);
+            color: #1e5c3a;
+        }
+
+        .glcm-note {
+            margin-top: 0.6rem;
+            font-size: 0.78rem;
+            color: #7a8c7e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-logo">
+                <div class="logo-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 5 C10 5 6 9 6 14 C6 19 9.5 23 14 23 C18.5 23 22 19 22 14 C22 9 18 5 14 5Z"
+                            fill="#C94040" />
+                        <path d="M11 8 C11 6 12.5 4 14 3 C15.5 4 17 6 17 8" fill="#3A6B3A" />
+                        <circle cx="10.5" cy="14" r="1" fill="rgba(255,255,255,0.35)" />
+                        <circle cx="14" cy="11.5" r="1" fill="rgba(255,255,255,0.35)" />
+                        <circle cx="17" cy="14.5" r="1" fill="rgba(255,255,255,0.35)" />
+                        <circle cx="12" cy="17" r="1" fill="rgba(255,255,255,0.35)" />
+                        <circle cx="16" cy="17.5" r="1" fill="rgba(255,255,255,0.35)" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="logo-title">StrawberryGuard</div>
+                    <div class="logo-sub">Sistem Deteksi Penyakit Daun Stroberi</div>
+                </div>
+            </div>
+            <div class="header-tag">UAP Pengolahan Citra</div>
+        </div>
+    </header>
+
+    <main class="main">
+
+        <!-- HERO SECTION -->
+        <section class="hero">
+            <div class="hero-left">
+                <div class="hero-eyebrow">Image Classification System</div>
+                <h1 class="hero-title">
+                    Deteksi &amp; <em>Klasifikasi</em><br>
+                    Penyakit Daun<br>
+                    Stroberi
+                </h1>
+                <p class="hero-desc">
+                    Upload foto daun stroberi untuk mendeteksi kondisi daun secara otomatis
+                    menggunakan algoritma <strong>K-Nearest Neighbor</strong> dan
+                    <strong>Naive Bayes</strong> dengan preprocessing <strong>Median Filter</strong>,
+                    segmentasi warna <strong>HSV</strong>, dan ekstraksi fitur tekstur
+                    <strong>GLCM</strong>.
+                </p>
+                <div class="hero-classes">
+                    <div class="class-chip healthy"><span class="chip-dot"></span>Healthy</div>
+                    <div class="class-chip leafspot"><span class="chip-dot"></span>Leaf Spot</div>
+                    <div class="class-chip mildew"><span class="chip-dot"></span>Powdery Mildew</div>
+                </div>
+            </div>
+
+            <!-- UPLOAD ZONE — sekarang di dalam hero kanan -->
+            <div class="hero-right">
+                <div class="upload-card" id="uploadCard">
+
+                    <!-- State: Kosong -->
+                    <label class="upload-area" id="uploadArea" for="fileInput">
+                        <div class="upload-icon-wrap">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#344C3D"
+                                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                        </div>
+                        <div class="upload-label">Seret &amp; Lepas foto daun di sini</div>
+                        <div class="upload-sub">atau</div>
+                        <span class="btn-upload">Pilih File</span>
+                        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" hidden>
+                        <div class="upload-hint">Format: JPG, JPEG, PNG — Maks. 16MB</div>
+                    </label>
+
+                    <!-- State: Preview -->
+                    <div class="preview-area" id="previewArea" style="display:none;">
+                        <img id="previewImg" src="" alt="Preview">
+                        <div class="preview-info">
+                            <span id="previewName" class="preview-name"></span>
+                            <button class="btn-reset" id="btnReset">✕ Ganti Foto</button>
+                        </div>
+                        <button class="btn-detect" id="btnDetect">
+                            Deteksi Sekarang
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- LOADING -->
+        <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+            <div class="loading-spinner"></div>
+            <div class="loading-steps">
+                <div class="loading-step active" id="step1">Menerapkan Median Filter...</div>
+                <div class="loading-step" id="step2">Segmentasi Warna HSV...</div>
+                <div class="loading-step" id="step3">Ekstraksi Fitur GLCM...</div>
+                <div class="loading-step" id="step4">Klasifikasi KNN &amp; Naive Bayes...</div>
+            </div>
+        </div>
+
+        <!-- RESULT SECTION -->
+        <section class="result-section" id="resultSection" style="display:none;">
+
+            <!-- 01 Preprocessing -->
+            <div class="section-title">
+                <span class="section-num">01</span>
+                <div>
+                    <h2>Hasil Preprocessing</h2>
+                    <p>Tahapan pengolahan citra sebelum klasifikasi</p>
+                </div>
+            </div>
+            <div class="preprocessing-grid" style="margin-bottom: 3rem;">
+                <div class="preproc-card">
+                    <div class="preproc-label">Original</div>
+                    <img id="imgOriginal" src="" alt="Original">
+                    <div class="preproc-desc">Citra asli yang diupload</div>
+                </div>
+                <div class="preproc-arrow">→</div>
+                <div class="preproc-card">
+                    <div class="preproc-label">Median Filter</div>
+                    <img id="imgFiltered" src="" alt="Median Filter">
+                    <div class="preproc-desc">Noise dikurangi dengan Median Filter (kernel 5×5)</div>
+                </div>
+                <div class="preproc-arrow">→</div>
+                <div class="preproc-card">
+                    <div class="preproc-label">Segmentasi HSV</div>
+                    <img id="imgSegmented" src="" alt="Segmentasi HSV">
+                    <div class="preproc-desc">Area daun disegmentasi berdasarkan ruang warna HSV</div>
+                </div>
+            </div>
+
+
+            <!-- 02 Fitur Tekstur GLCM -->
+            <div class="section-title glcm-section">
+                <span class="section-num">02</span>
+                <div>
+                    <h2>Fitur Tekstur GLCM</h2>
+                    <p>Gray-Level Co-occurrence Matrix — 6 fitur dihitung dari 4 sudut (0°, 45°, 90°, 135°)</p>
+                </div>
+            </div>
+            <div class="glcm-grid" id="glcmGrid" style="margin-bottom: 3rem;">
+                <!-- diisi oleh JS -->
+            </div>
+            <p class="glcm-note" style="margin-bottom:3rem; color:#7a8c7e; font-size:0.8rem;">
+                * Setiap nilai merupakan rata-rata dari keempat sudut arah (rotation-invariant).
+            </p>
+
+            <!-- 03 Klasifikasi -->
+            <div class="section-title">
+                <span class="section-num">03</span>
+                <div>
+                    <h2>Hasil Klasifikasi</h2>
+                    <p>Perbandingan hasil prediksi dua algoritma</p>
+                </div>
+            </div>
+            <div class="result-grid" style="margin-bottom: 3rem;">
+
+                <!-- KNN Card -->
+                <div class="result-card" id="knnCard">
+                    <div class="algo-header">
+                        <div class="algo-badge knn">KNN</div>
+                        <div class="algo-name">K-Nearest Neighbor</div>
+                    </div>
+                    <div class="result-label" id="knnLabel"></div>
+                    <div class="result-icon" id="knnIcon"></div>
+                    <div class="confidence-wrap">
+                        <div class="confidence-label">Confidence</div>
+                        <div class="confidence-bar-wrap">
+                            <div class="confidence-bar" id="knnBar"></div>
+                        </div>
+                        <div class="confidence-val" id="knnConf"></div>
+                    </div>
+                    <div class="prob-breakdown" id="knnBreakdown"></div>
+                    <div class="result-desc" id="knnDesc"></div>
+                    <div class="result-rec" id="knnRec"></div>
+                </div>
+
+                <!-- Naive Bayes Card -->
+                <div class="result-card" id="nbCard">
+                    <div class="algo-header">
+                        <div class="algo-badge nb">NB</div>
+                        <div class="algo-name">Naive Bayes</div>
+                    </div>
+                    <div class="result-label" id="nbLabel"></div>
+                    <div class="result-icon" id="nbIcon"></div>
+                    <div class="confidence-wrap">
+                        <div class="confidence-label">Confidence</div>
+                        <div class="confidence-bar-wrap">
+                            <div class="confidence-bar" id="nbBar"></div>
+                        </div>
+                        <div class="confidence-val" id="nbConf"></div>
+                    </div>
+                    <div class="prob-breakdown" id="nbBreakdown"></div>
+                    <div class="result-desc" id="nbDesc"></div>
+                    <div class="result-rec" id="nbRec"></div>
+                </div>
+            </div>
+
+            <!-- 03 Performa -->
+            <div class="section-title">
+                <span class="section-num">04</span>
+                <div>
+                    <h2>Performa Model</h2>
+                    <p>Akurasi model berdasarkan data uji</p>
+                </div>
+            </div>
+            <div class="perf-grid">
+                <div class="perf-card">
+                    <div class="perf-algo">K-Nearest Neighbor</div>
+                    <div class="perf-metrics">
+                        <div class="perf-metric">
+                            <div class="perf-val knn-color">97.63%</div>
+                            <div class="perf-name">Accuracy</div>
+                        </div>
+                        <div class="perf-metric">
+                            <div class="perf-val knn-color">97.67%</div>
+                            <div class="perf-name">Precision</div>
+                        </div>
+                        <div class="perf-metric">
+                            <div class="perf-val knn-color">97.63%</div>
+                            <div class="perf-name">Recall</div>
+                        </div>
+                        <div class="perf-metric">
+                            <div class="perf-val knn-color">97.62%</div>
+                            <div class="perf-name">F1-Score</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-algo">Naive Bayes</div>
+                    <div class="perf-metrics">
+                        <div class="perf-metric">
+                            <div class="perf-val nb-color">92.42%</div>
+                            <div class="perf-name">Accuracy</div>
+                        </div>
+                        <div class="perf-metric">
+                            <div class="perf-val nb-color">92.44%</div>
+                            <div class="perf-name">Precision</div>
+                        </div>
+                        <div class="perf-metric">
+                            <div class="perf-val nb-color">92.42%</div>
+                            <div class="perf-name">Recall</div>
+                        </div>
+                        <div class="perf-metric">
+                            <div class="perf-val nb-color">92.35%</div>
+                            <div class="perf-name">F1-Score</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Try Again -->
+            <div class="try-again-wrap">
+                <button class="btn-try-again" id="btnTryAgain">Deteksi Gambar Lain</button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>Deteksi dan Klasifikasi Penyakit Daun Stroberi Berbasis Median Filter, Segmentasi Warna HSV, dan Fitur
+            Tekstur GLCM &mdash; Pengolahan Citra Digital</p>
+        <p>Median Filter &middot; Segmentasi HSV &middot; Fitur GLCM &middot; KNN &middot; Naive Bayes</p>
+
+        <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
